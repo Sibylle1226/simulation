@@ -5,7 +5,7 @@ import datetime
 if "posts" not in st.session_state:
     st.session_state["posts"] = []
 
-def add_post(author, content, reply_to=None):
+def add_post(author, content, image=None, reply_to=None):
     """Ajoute un nouveau post ou une réponse à un post existant."""
     timestamp = datetime.datetime.now().strftime("%H:%M")  # Heure uniquement
     post = {
@@ -13,6 +13,7 @@ def add_post(author, content, reply_to=None):
         "content": content,
         "likes": 0,
         "replies": [],
+        "image": image,
         "timestamp": timestamp
     }
     if reply_to is not None:
@@ -29,6 +30,8 @@ st.title("Simulateur de Réseau Social")
 st.subheader("Fil d'actualité")
 for idx, post in enumerate(st.session_state["posts"]):
     st.write(f"**{post['author']}** ({post['timestamp']}) : {post['content']}")
+    if post["image"]:
+        st.image(post["image"], caption=f"Image partagée par {post['author']}", use_column_width=True)
     st.write(f"👍 {post['likes']} likes")
     
     # Boutons d'action pour chaque post
@@ -51,8 +54,9 @@ for idx, post in enumerate(st.session_state["posts"]):
         st.write("**Répondre :**")
         reply_author = st.text_input(f"Nom (Réponse à {idx})", key=f"reply_author_{idx}")
         reply_content = st.text_area(f"Message (Réponse à {idx})", key=f"reply_content_{idx}")
+        reply_image = st.file_uploader(f"Ajouter une image (Réponse à {idx})", type=["png", "jpg", "jpeg"], key=f"reply_image_{idx}")
         if st.button(f"Publier Réponse {idx}", key=f"publish_reply_{idx}"):
-            add_post(reply_author, reply_content, reply_to=idx)
+            add_post(reply_author, reply_content, image=reply_image, reply_to=idx)
             st.session_state[f"show_reply_{idx}"] = False  # Ferme la zone après publication
 
     # Afficher les réponses
@@ -60,6 +64,8 @@ for idx, post in enumerate(st.session_state["posts"]):
         st.write("**Réponses :**")
         for reply in post["replies"]:
             st.write(f"↳ **{reply['author']}** ({reply['timestamp']}) : {reply['content']}")
+            if reply["image"]:
+                st.image(reply["image"], caption=f"Image partagée par {reply['author']}", use_column_width=True)
 
 st.write("---")
 
@@ -67,14 +73,12 @@ st.write("---")
 st.subheader("Publier un nouveau message")
 author = st.text_input("Votre nom", key="new_author")
 content = st.text_area("Votre message", key="new_content")
+image = st.file_uploader("Ajouter une image", type=["png", "jpg", "jpeg"], key="new_image")
 if st.button("Publier"):
-    add_post(author, content)
+    add_post(author, content, image=image)
 
 # Option réservée pour effacer les contenus (réservée à l'administrateur)
 if st.checkbox("Effacer tous les messages (Administrateur uniquement)"):
     if st.button("Confirmer la suppression"):
         st.session_state["posts"] = []
         st.success("Tous les messages ont été supprimés.")
-
-
-
