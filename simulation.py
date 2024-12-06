@@ -51,9 +51,21 @@ with right_col:
     for idx, post in enumerate(st.session_state["posts"]):
         with st.container():
             st.markdown("---")  # Séparateur visuel
-            st.write(f"**{post['author']}** ({post['timestamp']}) : {post['content']}")
+            
+            # Texte principal avec style agrandi
+            st.markdown(
+                f"""
+                <div style="font-size:18px; font-weight:bold; margin-bottom:5px;">
+                {post['author']} ({post['timestamp']})</div>
+                <div style="font-size:16px; margin-bottom:10px;">{post['content']}</div>
+                """,
+                unsafe_allow_html=True
+            )
+            
+            # Affichage de l'image (si présente)
             if post["image"]:
                 st.image(post["image"], caption=f"Image partagée par {post['author']}", use_column_width=True)
+            
             st.write(f"👍 {post['likes']} likes")
 
             # Boutons d'action pour chaque post
@@ -86,6 +98,13 @@ with right_col:
                 st.write("**Réponses :**")
                 for reply in post["replies"]:
                     with st.container():
-                        st.write(f"↳ **{reply['author']}** ({reply['timestamp']}) : {reply['content']}")
+                        st.markdown(
+                            f"""
+                            <div style="font-size:16px; font-weight:bold; margin-bottom:5px;">
+                            ↳ {reply['author']} ({reply['timestamp']})</div>
+                            <div style="font-size:14px; margin-bottom:10px;">{reply['content']}</div>
+                            """,
+                            unsafe_allow_html=True
+                        )
                         if reply["image"]:
                             st.image(reply["image"], caption=f"Image partagée par {reply['author']}", use_column_width=True)
