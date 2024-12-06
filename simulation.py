@@ -6,7 +6,7 @@ if "posts" not in st.session_state:
     st.session_state["posts"] = []
 
 def add_post(author, content, reply_to=None):
-    """Ajoute un nouveau post ou commentaire"""
+    """Ajoute un nouveau post ou une réponse à un post existant."""
     timestamp = datetime.datetime.now().strftime("%H:%M")  # Heure uniquement
     post = {
         "author": author,
@@ -16,8 +16,10 @@ def add_post(author, content, reply_to=None):
         "timestamp": timestamp
     }
     if reply_to is not None:
+        # Ajoute la réponse au post correspondant
         st.session_state["posts"][reply_to]["replies"].append(post)
     else:
+        # Ajoute un nouveau post
         st.session_state["posts"].append(post)
 
 # Interface principale
@@ -36,17 +38,22 @@ for idx, post in enumerate(st.session_state["posts"]):
             st.session_state["posts"][idx]["likes"] += 1
     with col2:
         if st.button(f"Répondre {idx}", key=f"reply_{idx}"):
-            with st.expander("Répondre"):
-                reply_author = st.text_input(f"Nom (Réponse à {idx})", key=f"reply_author_{idx}")
-                reply_content = st.text_area(f"Message (Réponse à {idx})", key=f"reply_content_{idx}")
-                if st.button(f"Publier Réponse {idx}", key=f"publish_reply_{idx}"):
-                    add_post(reply_author, reply_content, reply_to=idx)
+            st.session_state[f"show_reply_{idx}"] = not st.session_state.get(f"show_reply_{idx}", False)
     with col3:
         if st.button(f"Reposter {idx}", key=f"repost_{idx}"):
             repost_author = st.text_input(f"Nom (Repost à {idx})", key=f"repost_author_{idx}")
             if st.button(f"Publier Repost {idx}", key=f"publish_repost_{idx}"):
                 repost_content = f"🔁 Repost : {post['content']}"
                 add_post(repost_author, repost_content)
+
+    # Zone pour ajouter une réponse
+    if st.session_state.get(f"show_reply_{idx}", False):
+        st.write("**Répondre :**")
+        reply_author = st.text_input(f"Nom (Réponse à {idx})", key=f"reply_author_{idx}")
+        reply_content = st.text_area(f"Message (Réponse à {idx})", key=f"reply_content_{idx}")
+        if st.button(f"Publier Réponse {idx}", key=f"publish_reply_{idx}"):
+            add_post(reply_author, reply_content, reply_to=idx)
+            st.session_state[f"show_reply_{idx}"] = False  # Ferme la zone après publication
 
     # Afficher les réponses
     if post["replies"]:
@@ -68,5 +75,6 @@ if st.checkbox("Effacer tous les messages (Administrateur uniquement)"):
     if st.button("Confirmer la suppression"):
         st.session_state["posts"] = []
         st.success("Tous les messages ont été supprimés.")
+
 
 
