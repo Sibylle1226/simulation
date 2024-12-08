@@ -24,7 +24,7 @@ def add_post(author, content, image=None, reply_to=None):
         st.session_state["posts"].append(post)
 
 # Configuration de la mise en page
-st.title("Simulateur de Réseau Social")
+st.title("Chapitre 9 - Réseau Social")
 left_col, right_col = st.columns([1, 2])
 
 with left_col:
