@@ -5,6 +5,14 @@ import datetime
 if "posts" not in st.session_state:
     st.session_state["posts"] = []
 
+# Initialisation des clés dans session_state si elles n'existent pas
+if "new_author" not in st.session_state:
+    st.session_state["new_author"] = ""
+if "new_content" not in st.session_state:
+    st.session_state["new_content"] = ""
+if "new_image" not in st.session_state:
+    st.session_state["new_image"] = None
+
 def add_post(author, content, image=None, reply_to=None):
     """Ajoute un nouveau post ou une réponse à un post existant."""
     timestamp = datetime.datetime.now().strftime("%H:%M")  # Heure uniquement
