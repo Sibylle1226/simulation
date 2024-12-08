@@ -30,11 +30,21 @@ left_col, right_col = st.columns([1, 2])
 with left_col:
     # Section pour publier un nouveau post
     st.subheader("Publier un nouveau message")
+    
+    # Champs de saisie
     author = st.text_input("Votre nom", key="new_author")
     content = st.text_area("Votre message", key="new_content")
     image = st.file_uploader("Ajouter une image", type=["png", "jpg", "jpeg"], key="new_image")
+    
+    # Bouton "Publier"
     if st.button("Publier"):
-        add_post(author, content, image=image)
+        if author and content:  # Vérifier que le nom et le contenu ne sont pas vides
+            add_post(author, content, image=image)
+            
+            # Réinitialiser les champs après publication
+            st.session_state["new_author"] = ""
+            st.session_state["new_content"] = ""
+            st.session_state["new_image"] = None  # Réinitialiser l'image téléchargée
 
     # Option réservée pour effacer les contenus (réservée à l'administrateur)
     st.write("---")
@@ -108,5 +118,3 @@ with right_col:
                         )
                         if reply["image"]:
                             st.image(reply["image"], caption=f"Image partagée par {reply['author']}", use_column_width=True)
-
-
