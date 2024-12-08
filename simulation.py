@@ -1,59 +1,37 @@
 import streamlit as st
 import pandas as pd
 import datetime
+import gdown  # Bibliothèque pour télécharger les fichiers depuis Google Drive
 
-# Initialisation de la liste des posts dans session_state si elle n'existe pas encore
-if "posts" not in st.session_state:
-    st.session_state["posts"] = []
-
-# Fonction pour ajouter un nouveau message
-def add_post(author, content, image=None, reply_to=None):
-    """Ajoute un nouveau message ou une réponse à un message existant."""
-    timestamp = datetime.datetime.now().strftime("%H:%M")
-    post = {
-        "author": author,
-        "content": content,
-        "likes": 0,
-        "replies": [],
-        "image": image,
-        "timestamp": timestamp
-    }
-    if reply_to is not None:
-        # Ajouter la réponse au post existant
-        st.session_state["posts"][reply_to]["replies"].append(post)
-    else:
-        # Ajouter un nouveau message principal
-        st.session_state["posts"].append(post)
-
-# Fonction pour sauvegarder les messages dans un fichier CSV
-def save_to_csv():
-    """Sauvegarde les messages et réponses dans un fichier CSV."""
-    flat_posts = []
-    for post in st.session_state["posts"]:
-        flat_posts.append({
-            "author": post["author"],
-            "content": post["content"],
-            "likes": post["likes"],
-            "timestamp": post["timestamp"],
-            "image": post["image"],  # Vous pouvez stocker un chemin ou laisser vide
-            "is_reply": False,
-            "parent_id": None
-        })
-        for reply in post["replies"]:
-            flat_posts.append({
-                "author": reply["author"],
-                "content": reply["content"],
-                "likes": 0,
-                "timestamp": reply["timestamp"],
-                "image": reply["image"],  # Vous pouvez stocker un chemin ou laisser vide
-                "is_reply": True,
-                "parent_id": post["content"]
-            })
+# Fonction pour télécharger le fichier CSV depuis Google Drive
+def download_from_drive():
+    """Télécharge le fichier CSV depuis Google Drive."""
+    # Remplacez par votre ID de fichier Google Drive
+    file_id = '1REVMIrdhkE5GLF5V9kYlhkEkN-sBACPk'  # Remplacez avec l'ID de votre fichier
+    url = f"https://drive.google.com/uc?id={file_id}"
+    output = "posts.csv"
     
-    df = pd.DataFrame(flat_posts)
-    df.to_csv("posts.csv", index=False)  # Sauvegarde les posts dans un fichier CSV
+    # Télécharger le fichier
+    gdown.download(url, output, quiet=False)
+    
+# Télécharger le fichier CSV depuis Google Drive
+download_from_drive()
 
-# Interface pour publier un message
+# Charger les posts depuis le fichier CSV téléchargé
+def load_posts():
+    try:
+        # Lire le fichier CSV téléchargé
+        posts = pd.read_csv("posts.csv")
+        posts["timestamp"] = pd.to_datetime(posts["timestamp"], format="%H:%M")
+        return posts
+    except Exception as e:
+        st.error(f"Erreur de chargement des messages: {e}")
+        return pd.DataFrame(columns=["author", "content", "likes", "timestamp", "image", "is_reply", "parent_id"])
+
+# Charger les messages
+posts = load_posts()
+
+# Interface utilisateur
 st.title("Admin - Publier un message")
 
 author = st.text_input("Nom de l'auteur", key="author")
