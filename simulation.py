@@ -1,110 +1,72 @@
 import streamlit as st
-import datetime
+import pandas as pd
+import time
 
-# Simuler des données (stockées dans session_state)
-if "posts" not in st.session_state:
-    st.session_state["posts"] = []
+# Initialiser les messages
+if "messages" not in st.session_state:
+    st.session_state["messages"] = []
+if "start_time" not in st.session_state:
+    st.session_state["start_time"] = None
+if "paused" not in st.session_state:
+    st.session_state["paused"] = False
 
-def add_post(author, content, image=None, reply_to=None):
-    """Ajoute un nouveau post ou une réponse à un post existant."""
-    timestamp = datetime.datetime.now().strftime("%H:%M")  # Heure uniquement
-    post = {
-        "author": author,
-        "content": content,
-        "likes": 0,
-        "replies": [],
-        "image": image,
-        "timestamp": timestamp
-    }
-    if reply_to is not None:
-        # Ajoute la réponse au post correspondant
-        st.session_state["posts"][reply_to]["replies"].append(post)
-    else:
-        # Ajoute un nouveau post
-        st.session_state["posts"].append(post)
+# Fonction pour charger les messages
+@st.cache_data
+def load_messages(file_path):
+    return pd.read_csv(file_path)
 
-# Configuration de la mise en page
-st.title("Réseau Social Chapitre 9")
-left_col, right_col = st.columns([1, 2])
+# Afficher le flux de messages
+def display_messages():
+    for message in sorted(st.session_state["messages"], key=lambda x: x["timestamp"]):
+        st.write(f"**{message['name']}** ({message['timestamp']} minutes après le début):")
+        st.write(message["text"])
+        if message["photo"]:
+            st.image(message["photo"], width=300)
+        for response in message["responses"]:
+            st.write(f"↳ **{response['name']}**: {response['text']}")
+        st.divider()
 
-with left_col:
-    # Section pour publier un nouveau post
-    st.subheader("Publier un nouveau message")
-    author = st.text_input("Votre nom", key="new_author")
-    content = st.text_area("Votre message", key="new_content")
-    image = st.file_uploader("Ajouter une image", type=["png", "jpg", "jpeg"], key="new_image")
-    if st.button("Publier"):
-        add_post(author, content, image=image)
+# Ajouter un nouveau message au flux
+def add_message(name, text, photo, timestamp, responses):
+    st.session_state["messages"].append({
+        "name": name,
+        "text": text,
+        "photo": photo,
+        "timestamp": timestamp,
+        "responses": responses
+    })
 
-    # Option réservée pour effacer les contenus (réservée à l'administrateur)
-    st.write("---")
-    if st.checkbox("Effacer tous les messages (Administrateur uniquement)"):
-        if st.button("Confirmer la suppression"):
-            st.session_state["posts"] = []
-            st.success("Tous les messages ont été supprimés.")
+# Charger les données du fichier CSV
+file_path = "https://drive.google.com/uc?id=1uDUK8oCfwlHEtdTVcmz-KMqBE9ZCK2F7&export=download"
+data = load_messages(file_path)
 
-with right_col:
-    # Section pour afficher les posts
-    st.subheader("Fil d'actualité")
-    
-    # Affichage des posts dans l'ordre ancien -> récent
-    for idx, post in enumerate(st.session_state["posts"]):
-        with st.container():
-            st.markdown("---")  # Séparateur visuel
-            
-            # Texte principal avec style agrandi
-            st.markdown(
-                f"""
-                <div style="font-size:18px; font-weight:bold; margin-bottom:5px;">
-                {post['author']} ({post['timestamp']})</div>
-                <div style="font-size:16px; margin-bottom:10px;">{post['content']}</div>
-                """,
-                unsafe_allow_html=True
-            )
-            
-            # Affichage de l'image (si présente)
-            if post["image"]:
-                st.image(post["image"], caption=f"Image partagée par {post['author']}", use_column_width=True)
-            
-            st.write(f"👍 {post['likes']} likes")
+# Interface administrateur
+st.sidebar.title("Administration")
+password = st.sidebar.text_input("Mot de passe", type="password")
 
-            # Boutons d'action pour chaque post
-            col1, col2, col3 = st.columns([1, 1, 2])
-            with col1:
-                if st.button(f"Like {idx}", key=f"like_{idx}"):
-                    st.session_state["posts"][idx]["likes"] += 1
-            with col2:
-                if st.button(f"Répondre {idx}", key=f"reply_{idx}"):
-                    st.session_state[f"show_reply_{idx}"] = not st.session_state.get(f"show_reply_{idx}", False)
-            with col3:
-                if st.button(f"Reposter {idx}", key=f"repost_{idx}"):
-                    repost_author = st.text_input(f"Nom (Repost à {idx})", key=f"repost_author_{idx}")
-                    if st.button(f"Publier Repost {idx}", key=f"publish_repost_{idx}"):
-                        repost_content = f"🔁 Repost : {post['content']}"
-                        add_post(repost_author, repost_content)
+if password == "admin123":  # Mot de passe administrateur
+    if st.sidebar.button("Start"):
+        st.session_state["start_time"] = time.time()
+        st.session_state["paused"] = False
+    if st.sidebar.button("Pause"):
+        st.session_state["paused"] = True
+    if st.sidebar.button("Stop"):
+        st.session_state["start_time"] = None
+        st.session_state["messages"] = []
+        st.session_state["paused"] = False
 
-            # Zone pour ajouter une réponse
-            if st.session_state.get(f"show_reply_{idx}", False):
-                st.write("**Répondre :**")
-                reply_author = st.text_input(f"Nom (Réponse à {idx})", key=f"reply_author_{idx}")
-                reply_content = st.text_area(f"Message (Réponse à {idx})", key=f"reply_content_{idx}")
-                reply_image = st.file_uploader(f"Ajouter une image (Réponse à {idx})", type=["png", "jpg", "jpeg"], key=f"reply_image_{idx}")
-                if st.button(f"Publier Réponse {idx}", key=f"publish_reply_{idx}"):
-                    add_post(reply_author, reply_content, image=reply_image, reply_to=idx)
-                    st.session_state[f"show_reply_{idx}"] = False  # Ferme la zone après publication
+    # Lecture et ajout de messages basés sur le timing
+    if st.session_state["start_time"] and not st.session_state["paused"]:
+        elapsed_minutes = (time.time() - st.session_state["start_time"]) / 60
+        for _, row in data.iterrows():
+            if row["Timing (minutes)"] <= elapsed_minutes and not any(m["text"] == row["Texte"] for m in st.session_state["messages"]):
+                responses = []
+                if pd.notna(row["Reponses"]):
+                    responses.append({"name": row["Nom Réponse"], "text": row["Reponses"]})
+                add_message(row["Nom"], row["Texte"], row["Photo URL"], row["Timing (minutes)"], responses)
 
-            # Afficher les réponses sous le post correspondant
-            if post["replies"]:
-                st.write("**Réponses :**")
-                for reply in post["replies"]:
-                    with st.container():
-                        st.markdown(
-                            f"""
-                            <div style="font-size:16px; font-weight:bold; margin-bottom:5px;">
-                            ↳ {reply['author']} ({reply['timestamp']})</div>
-                            <div style="font-size:14px; margin-bottom:10px;">{reply['content']}</div>
-                            """,
-                            unsafe_allow_html=True
-                        )
-                        if reply["image"]:
-                            st.image(reply["image"], caption=f"Image partagée par {reply['author']}", use_column_width=True)
+    # Afficher les messages dans le flux
+    st.title("Flux de messages")
+    display_messages()
+else:
+    st.sidebar.error("Accès refusé. Veuillez entrer le mot de passe correct.")
