@@ -54,6 +54,7 @@ else:
 
 if st.button("Publier"):
     add_post(author, content, image=image, reply_to=reply_to)
+    
     # Réinitialiser les champs après publication
     st.session_state["new_author"] = ""  # Réinitialiser le champ auteur
     st.session_state["new_content"] = ""  # Réinitialiser le champ contenu
