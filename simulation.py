@@ -37,7 +37,7 @@ def add_message(name, text, photo, timestamp, responses):
     })
 
 # Charger les données du fichier CSV
-file_path = "https://drive.google.com/uc?id=1uDUK8oCfwlHEtdTVcmz-KMqBE9ZCK2F7&export=download"
+file_path = "https://drive.google.com/uc?id=1ddjTlbN8rBYY5jbsLx1Ph40kmZNV8irr&export=download"
 data = load_messages(file_path)
 
 # Interface administrateur
