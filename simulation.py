@@ -1,6 +1,12 @@
 import streamlit as st
 import datetime
 
+# Initialisation des clés si elles n'existent pas dans session_state
+if "new_author" not in st.session_state:
+    st.session_state["new_author"] = ""
+if "new_content" not in st.session_state:
+    st.session_state["new_content"] = ""
+
 # Simuler des données (stockées dans session_state)
 if "posts" not in st.session_state:
     st.session_state["posts"] = []
@@ -28,8 +34,8 @@ st.title("Chapitre 9 Réseau Social")
 
 # Éditeur de texte unique
 st.subheader("Créer un message ou répondre")
-author = st.text_input("Votre nom", key="new_author")
-content = st.text_area("Votre message", key="new_content")
+author = st.text_input("Votre nom", key="new_author", value=st.session_state["new_author"])
+content = st.text_area("Votre message", key="new_content", value=st.session_state["new_content"])
 image = st.file_uploader("Ajouter une image", type=["png", "jpg", "jpeg"], key="new_image")
 
 # Choisir si le message est une réponse
@@ -48,6 +54,7 @@ else:
 
 if st.button("Publier"):
     add_post(author, content, image=image, reply_to=reply_to)
+    # Réinitialiser les champs après publication
     st.session_state["new_author"] = ""  # Réinitialiser le champ auteur
     st.session_state["new_content"] = ""  # Réinitialiser le champ contenu
 
