@@ -22,8 +22,8 @@ def init_db():
         conn.commit()
 
 def add_post_to_db(author, content, image=None):
-    """Ajoute un nouveau post à la base de données."""
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    """Ajoute un nouveau post à la base de données, en enregistrant uniquement l'heure."""
+    timestamp = datetime.datetime.now().strftime("%H:%M")  # Heure uniquement (format: HH:MM)
     with sqlite3.connect(DB_FILE) as conn:
         cursor = conn.cursor()
         cursor.execute("""
@@ -33,10 +33,10 @@ def add_post_to_db(author, content, image=None):
         conn.commit()
 
 def get_posts_from_db():
-    """Récupère tous les posts depuis la base de données."""
+    """Récupère tous les posts depuis la base de données, les derniers en premier."""
     with sqlite3.connect(DB_FILE) as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT id, author, content, image, likes, timestamp FROM posts ORDER BY id ASC")
+        cursor.execute("SELECT id, author, content, image, likes, timestamp FROM posts ORDER BY id DESC")
         return cursor.fetchall()
 
 def update_likes_in_db(post_id, new_likes):
